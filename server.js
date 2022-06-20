@@ -21,6 +21,10 @@ app.get('/', (request, response) => {
   response.sendFile(__dirname + '/views/index.html');
 })
 
+app.get('/transfer', (request, response) => {
+  response.sendFile(__dirname + '/views/transfer.html');
+})
+
 // 서버 시작
 app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);
