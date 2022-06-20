@@ -54,7 +54,7 @@
         // id, key 값 불러오기
         const id = $("#id").val()
         const key = $("#key").val()
-        $("#div-result").show();
+        // $("#div-result").show();
 
         $.get('/asset', { id, key }, (data, status) => {
           if (status === 'success') {
