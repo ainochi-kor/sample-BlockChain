@@ -167,10 +167,157 @@ app.post('/asset', async (request, response) => {
 
   // 수행 결과물 client(web browser)에게 전달!
   const resultPath = path.join(process.cwd(), '/views/result.html');
-  resultHTML = resultPath.replace("<div></div>", "<div><p>Transaction has been submitted</p></div>")
+  let resultHTML = fs.readFileSync(resultPath, 'utf-8')
+  resultHTML = resultHTML.replace("<div></div>", "<div><p>Transaction has been submitted</p></div>")
   response.status(200).send(resultHTML);
 
 })
+
+app.get('/asset', async (request, response) => {
+  // request에서 인자값(data)를 추출
+  const id = request.body.id
+  const key = request.body.key
+  console.log()
+
+  // 0. wallet에 있는 사용자 인증서 가져오기
+  const walletPath = path.join(process.cwd(), 'wallet');
+  const wallet = new FileSystemWallet(walletPath);
+  console.log(`Wallet path: ${walletPath}`)
+
+  // Check to see if we've already enrolled the user.
+  const userExists = await wallet.exists(id);
+  if (userExists) {
+    console.log('An identity for the user already exists in the wallet')
+    const obj = JSON.parse('{"ERR_MSG": "An identity for the user already exists in the wallet"}');
+    response.status(400).json(obj);
+    return;
+  }
+  // 1. 게이트웨이 접속
+  const gateway = new Gateway()
+  await gateway.connect(ccp, { wallet, identity: id, discovery: { enabled: false } })
+
+  // 2. 채널 (mychannel) 접속
+  const network = await gateway.getNetwork('mychannel');
+
+  // 3. 체인코드 가져오기 (simpleasset)
+  const contract = network.getContract('simpleasset');
+
+  // 4. 체인코드 호출하기 (set ( key, value ))
+  const txresult = await contract.evaluateTransaction('get', key);
+  console.log('Transcation has been submitted');
+
+  // 5. 게이트웨이 연결 해제 
+  await gateway.disconnect();
+
+  const obj = JSON.parse(txresult);
+  response.status(200).json(obj)
+})
+
+app.post('/tx', async (request, response) => {
+  // request에서 인자값(data)를 추출
+  const id = request.body.id
+  const from = request.body.from
+  const to = request.body.to
+  const value = request.body.value
+  console.log('/asset-post-' + id + '-' + key + '-' + value);
+  // BN에 접곳갷서 simpleasset 체인코드 중 set 기능을 호출
+
+  // 0. wallet에 있는 사용자 인증서 가져오기
+  const walletPath = path.join(process.cwd(), 'wallet');
+  const wallet = new FileSystemWallet(walletPath);
+  console.log(`Wallet path: ${walletPath}`)
+
+  // Check to see if we've already enrolled the user.
+  const userExists = await wallet.exists(id);
+  if (userExists) {
+    console.log('An identity for the user already exists in the wallet')
+    const obj = JSON.parse('{"ERR_MSG": "An identity for the user already exists in the wallet"}');
+    response.status(400).json(obj);
+    return;
+  }
+  // 1. 게이트웨이 접속
+  const gateway = new Gateway()
+  await gateway.connect(ccp, { wallet, identity: id, discovery: { enabled: false } })
+
+  // 2. 채널 (mychannel) 접속
+  const network = await gateway.getNetwork('mychannel');
+
+  // 3. 체인코드 가져오기 (simpleasset)
+  const contract = network.getContract('simpleasset');
+
+  // 4. 체인코드 호출하기 (set ( key, value ))
+  await contract.submitTransaction('transfer', from, to, value);
+  console.log('Transcation has been submitted');
+
+  // 5. 게이트웨이 연결 해제 
+  await gateway.disconnect();
+
+
+  // 수행 결과물 client(web browser)에게 전달!
+  const resultPath = path.join(process.cwd(), '/views/result.html');
+  let resultHTML = fs.readFileSync(resultPath, 'utf-8')
+  resultHTML = resultHTML.replace("<div></div>", "<div><p>Transaction has been submitted</p></div>")
+  response.status(200).send(resultHTML);
+
+})
+
+app.get('/assets', async (request, response) => {
+  // request에서 인자값(data)를 추출
+  const id = request.body.id
+  const key = request.body.key
+  console.log('/asset-post-' + id + '-' + key);
+  // BN에 접곳갷서 simpleasset 체인코드 중 set 기능을 호출
+
+  // 0. wallet에 있는 사용자 인증서 가져오기
+  const walletPath = path.join(process.cwd(), 'wallet');
+  const wallet = new FileSystemWallet(walletPath);
+  console.log(`Wallet path: ${walletPath}`)
+
+  // Check to see if we've already enrolled the user.
+  const userExists = await wallet.exists(id);
+  if (userExists) {
+    console.log('An identity for the user already exists in the wallet')
+    const obj = JSON.parse('{"ERR_MSG": "An identity for the user already exists in the wallet"}');
+    response.status(400).json(obj);
+    return;
+  }
+  // 1. 게이트웨이 접속
+  const gateway = new Gateway()
+  await gateway.connect(ccp, { wallet, identity: id, discovery: { enabled: false } })
+
+  // 2. 채널 (mychannel) 접속
+  const network = await gateway.getNetwork('mychannel');
+
+  // 3. 체인코드 가져오기 (simpleasset)
+  const contract = network.getContract('simpleasset');
+
+  // 4. 체인코드 호출하기 (set ( key, value ))
+  const history = await contract.evaluateTransaction('history', key);
+  console.log('Transcation has been submitted');
+
+  // 5. 게이트웨이 연결 해제 
+  await gateway.disconnect();
+  const resultPath = path.join(process.cwd(), '/views/result.html');
+  let resultHTML = fs.readFileSync(resultPath, 'utf-8')
+  let tableHTML = `\n<table class="table table-bordered">`
+
+  const txs = JSON.parse(history)
+
+  for (let i = 0; t < txs.length; i++) {
+    tableHTML += "<tr><td>TxId</td>"
+    tableHTML = tableHTML + "<td>" + txs[i].TxId + "</td></tr>"
+    tableHTML += "<tr><td>TimeStamp</td>"
+    tableHTML = tableHTML + "<td>" + txs[i].TimeStamp + "</td></tr>"
+    tableHTML += "\n"
+  }
+
+  tableHTML += "</table>"
+  resultHTML = resultHTML.replace("<div></div>", `<div><p>Transaction(history) has been submitted</p><br> ${tableHTML}</div>`)
+  response.status(200).json(200)
+
+})
+
+
 
 // 서버 시작
 app.listen(PORT, HOST);
